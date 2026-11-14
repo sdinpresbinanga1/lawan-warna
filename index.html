@@ -169,7 +169,7 @@
       </div>
       <div class="text-2xl font-black tracking-widest text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" id="timer">10:00</div>
       <div class="flex items-center gap-2">
-        <button onclick="triggerResetGame()" class="bg-red-600/80 hover:bg-red-600 text-white text-[11px] px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow border border-red-500/30">
+        <button onclick="triggerResetGame()" class="btn-reset-game bg-red-600/80 hover:bg-red-600 text-white text-[11px] px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow border border-red-500/30">
           🔄 Reset
         </button>
         <button onclick="toggleFullScreen()" id="fs-btn" class="bg-emerald-600/80 hover:bg-emerald-600 text-white text-[11px] px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow border border-emerald-500/30">
@@ -179,7 +179,7 @@
     </div>
 
     <!-- Arena Lintasan 2 Match (1 vs 1) dengan 20 Lingkaran Masing-Masing -->
-    <div id="playerTracks" class="glass-card rounded-2xl my-1.5 flex flex-col justify-between overflow-hidden shrink-0 shadow-xl border border-indigo-500/30" h-auto py-2 gap-1.5 shrink-0">
+    <div id="playerTracks" class="glass-card rounded-2xl my-1.5 flex flex-col justify-between overflow-hidden shrink-0 shadow-xl border border-indigo-500/30 h-auto py-2 gap-1.5">
       <!-- Diisi otomatis oleh renderArena() -->
     </div>
 
@@ -212,7 +212,7 @@
       <button onclick="cetakJPG()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg transform hover:scale-105">
         🖼️ Cetak JPG
       </button>
-      <button onclick="triggerResetGame()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg transform hover:scale-105">
+      <button onclick="triggerResetGame()" class="btn-reset-game bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg transform hover:scale-105">
         🔄 Reset Game
       </button>
     </div>
@@ -366,7 +366,7 @@
       container.innerHTML = `<div class="text-center text-slate-400 py-8 animate-pulse">⏳ Memuat catatan materi dari database Spreadsheet...</div>`;
       
       try {
-        let resCatatan = await fetch(API_URL + "?action=getCatatan");
+        let resCatatan = await fetch(API_URL + "?action=getCatatan&t=" + Date.now());
         let dataCatatan = await resCatatan.json();
 
         if (!dataCatatan || dataCatatan.length === 0) {
@@ -398,10 +398,10 @@
       loadCatatan();
 
       try {
-        let resSiswa = await fetch(API_URL + "?action=getSiswa");
+        let resSiswa = await fetch(API_URL + "?action=getSiswa&t=" + Date.now());
         semuaSiswa = await resSiswa.json();
 
-        let resSoal = await fetch(API_URL + "?action=getSoal");
+        let resSoal = await fetch(API_URL + "?action=getSoal&t=" + Date.now());
         let rawSoal = await resSoal.json();
         
         bankSoal = rawSoal;
@@ -426,7 +426,7 @@
       modal.classList.add("flex");
 
       try {
-        let res = await fetch(API_URL + "?action=getRekapNilai");
+        let res = await fetch(API_URL + "?action=getRekapNilai&t=" + Date.now());
         let rekapData = await res.json();
 
         tbody.innerHTML = "";
@@ -1067,7 +1067,7 @@
         await fetch(API_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({ action: "saveResults", results: results })
         });
       } catch(e) {
@@ -1122,17 +1122,31 @@
         return;
       }
 
+      // Ubah tampilan tombol menjadi loading agar tidak diklik ganda
+      const resetBtns = document.querySelectorAll(".btn-reset-game");
+      resetBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = "⏳ Mereset...";
+      });
+
       try {
-        await fetch(API_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "resetGameData" })
-        });
-        alert("Data di database berhasil direset!");
-        location.reload();
+        // Menggunakan GET + timestamp anti-cache agar Google Apps Script langsung memproses dan membalas status
+        const response = await fetch(API_URL + "?action=resetGameData&t=" + Date.now());
+        const result = await response.json();
+
+        if (result && result.status === "success") {
+          alert("Data di database berhasil direset!");
+          location.reload();
+        } else {
+          throw new Error(result.message || "Respon server tidak valid");
+        }
       } catch(e) {
-        alert("Gagal mereset database. Periksa koneksi internet.");
+        console.error("Error reset database:", e);
+        alert("Gagal mereset database. Pastikan Code.gs sudah diperbarui dan di-Deploy ulang!");
+        resetBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.innerHTML = "🔄 Reset";
+        });
       }
     }
 
