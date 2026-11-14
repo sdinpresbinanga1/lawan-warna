@@ -183,7 +183,7 @@
       <!-- Diisi otomatis oleh renderArena() -->
     </div>
 
-    <!-- Grid Soal Pilihan Ganda (4 Kartu: Merah, Hijau, Biru, Kuning) -->
+    <!-- Grid Soal Pilihan Ganda (4 Kartu: Merah, Hijau, Kuning, Biru) -->
     <div id="questionGrid" class="grid grid-cols-4 gap-2.5 flex-1 pb-1 overflow-hidden"></div>
   </div>
 
@@ -238,11 +238,12 @@
     let match1Winner = null; 
     let match2Winner = null; 
 
+    // Urutan Slot Kartu Soal diubah: Merah(0), Hijau(1), Kuning(2), Biru(3)
     const SLOT_CONFIG = [
       { color: 'red',    label: 'Merah',  bg: 'bg-red-500',    border: 'border-red-500',    text: 'text-red-400',    match: 1, side: 'left' },
       { color: 'green',  label: 'Hijau',  bg: 'bg-green-500',  border: 'border-green-500',  text: 'text-green-400',  match: 2, side: 'left' },
-      { color: 'blue',   label: 'Biru',   bg: 'bg-blue-500',   border: 'border-blue-500',   text: 'text-blue-400',   match: 2, side: 'right' },
-      { color: 'yellow', label: 'Kuning', bg: 'bg-yellow-400', border: 'border-yellow-400', text: 'text-yellow-400', match: 1, side: 'right' }
+      { color: 'yellow', label: 'Kuning', bg: 'bg-yellow-400', border: 'border-yellow-400', text: 'text-yellow-400', match: 1, side: 'right' },
+      { color: 'blue',   label: 'Biru',   bg: 'bg-blue-500',   border: 'border-blue-500',   text: 'text-blue-400',   match: 2, side: 'right' }
     ];
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1122,7 +1123,6 @@
         return;
       }
 
-      // Ubah tampilan tombol menjadi loading agar tidak diklik ganda
       const resetBtns = document.querySelectorAll(".btn-reset-game");
       resetBtns.forEach(btn => {
         btn.disabled = true;
@@ -1130,7 +1130,6 @@
       });
 
       try {
-        // Menggunakan GET + timestamp anti-cache agar Google Apps Script langsung memproses dan membalas status
         const response = await fetch(API_URL + "?action=resetGameData&t=" + Date.now());
         const result = await response.json();
 
