@@ -40,7 +40,7 @@
 
   <!-- AUDIO BACKSOUND GAME (LOOP) -->
   <audio id="bgm" loop preload="auto">
-      <source src="mp3.mp3" type="audio/mpeg">
+      <source src="lagu.mp3" type="audio/mpeg">
   </audio>
 
   <!-- AUDIO POPUP HASIL SESI (TANPA LOOP) -->
@@ -251,6 +251,7 @@
 
     function playSound(freq, duration) {
       try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
         osc.connect(gain);
@@ -268,7 +269,9 @@
 
     function startBGM() {
       try {
+        bgm.load();
         bgm.currentTime = 0;
+        bgm.volume = 0.8;
         bgm.play().catch(e => console.log("Audio autoplay dicegah browser:", e));
       } catch(e) {}
     }
