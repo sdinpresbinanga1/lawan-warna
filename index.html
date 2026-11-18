@@ -747,7 +747,6 @@
     }
 
     function isPlayerMatchFinished(p) {
-      if (p.totalJawab >= 21) return true; // Maksimal kesempatan 21x menjawab
       if (p.match === 1) return match1Winner !== null;
       if (p.match === 2) return match2Winner !== null;
       return false;
@@ -777,7 +776,7 @@
         if (!currentSoal || matchDone) {
           const winnerColor = p.match === 1 ? match1Winner : match2Winner;
           const isWinner = (winnerColor === p.color);
-          const statusTitle = p.totalJawab >= 21 ? "LIMIT 21 SOAL TERCAPAI" : (isWinner ? "🏆 MENANG MATCH!" : "MATCH SELESAI");
+          const statusTitle = isWinner ? "🏆 MENANG MATCH!" : "MATCH SELESAI";
           const statusColor = isWinner ? "text-yellow-400" : "text-slate-400";
           const board = p.match === 1 ? boardMatch1 : boardMatch2;
           const count = board.filter(c => c === p.color).length;
@@ -787,7 +786,7 @@
               <div class="w-6 h-6 rounded-full ${p.bgClass} mb-2 shadow-lg"></div>
               <h3 class="font-bold text-white text-sm mb-1">${p.nama}</h3>
               <p class="${statusColor} font-black text-sm mb-1">${statusTitle}</p>
-              <p class="text-xs text-slate-300">Lingkaran: ${count}/20 • Terjawab: ${p.totalJawab}/21</p>
+              <p class="text-xs text-slate-300">Lingkaran: ${count}/20 • Terjawab: ${p.totalJawab}</p>
             </div>
           `;
           return;
@@ -817,7 +816,7 @@
                 <span class="w-4 h-4 rounded-full ${p.bgClass} shrink-0 shadow"></span>
                 <span class="text-[11px] font-bold ${p.textClass} truncate">${p.nama}</span>
               </div>
-              <span class="text-[10px] text-cyan-300 font-semibold shrink-0 bg-cyan-950/60 px-2 py-0.5 rounded-md border border-cyan-800/50">Jawab: ${p.totalJawab}/21</span>
+              <span class="text-[10px] text-cyan-300 font-semibold shrink-0 bg-cyan-950/60 px-2 py-0.5 rounded-md border border-cyan-800/50">Jawab: ${p.totalJawab}</span>
             </div>
 
             <div class="text-[11px] font-medium leading-tight whitespace-pre-line custom-scroll overflow-y-auto flex-1 min-h-0 pr-1 my-1">${formattedQ}</div>
@@ -913,9 +912,13 @@
       renderArena();
       renderSoal();
 
-      const allPlayersFinished = pemainAktif.every(pl => isPlayerMatchFinished(pl));
+      const m1Active = pemainAktif.some(pl => pl.match === 1);
+      const m2Active = pemainAktif.some(pl => pl.match === 2);
 
-      if (allPlayersFinished) {
+      const m1Done = !m1Active || match1Winner !== null;
+      const m2Done = !m2Active || match2Winner !== null;
+
+      if (m1Done && m2Done) {
         setTimeout(() => {
           akhiriSesi();
         }, 500);
