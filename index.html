@@ -167,7 +167,7 @@
         <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
         <h2 class="text-sm font-black text-yellow-400 tracking-wide" id="infoSesiHeader">Sesi 1</h2>
       </div>
-      <div class="text-2xl font-black tracking-widest text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" id="timer">10:00</div>
+      <div class="text-2xl font-black tracking-widest text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" id="timer">06:00</div>
       <div class="flex items-center gap-2">
         <button onclick="triggerResetGame()" class="btn-reset-game bg-red-600/80 hover:bg-red-600 text-white text-[11px] px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow border border-red-500/30">
           🔄 Reset
@@ -227,7 +227,7 @@
     let pemainAktif = [];
     let sesiKe = 1;
     let timerInterval = null;
-    let waktuDetik = 600; // 10 Menit tetap
+    let waktuDetik = 360; // 6 Menit (360 detik)
     let hasilSemuaSesi = [];
     let kelompokSementara = [];
     let isGameRunning = false;
@@ -238,7 +238,6 @@
     let match1Winner = null; 
     let match2Winner = null; 
 
-    // Urutan Slot Kartu Soal diubah: Merah(0), Hijau(1), Kuning(2), Biru(3)
     const SLOT_CONFIG = [
       { color: 'red',    label: 'Merah',  bg: 'bg-red-500',    border: 'border-red-500',    text: 'text-red-400',    match: 1, side: 'left' },
       { color: 'green',  label: 'Hijau',  bg: 'bg-green-500',  border: 'border-green-500',  text: 'text-green-400',  match: 2, side: 'left' },
@@ -745,6 +744,7 @@
     }
 
     function isPlayerMatchFinished(p) {
+      if (p.totalJawab >= 21) return true; // Maksimal kesempatan 22x menjawab
       if (p.match === 1) return match1Winner !== null;
       if (p.match === 2) return match2Winner !== null;
       return false;
@@ -774,7 +774,7 @@
         if (!currentSoal || matchDone) {
           const winnerColor = p.match === 1 ? match1Winner : match2Winner;
           const isWinner = (winnerColor === p.color);
-          const statusTitle = isWinner ? "🏆 MENANG MATCH!" : "MATCH SELESAI";
+          const statusTitle = p.totalJawab >= 21 ? "LIMIT 21 SOAL TERCAPAI" : (isWinner ? "🏆 MENANG MATCH!" : "MATCH SELESAI");
           const statusColor = isWinner ? "text-yellow-400" : "text-slate-400";
           const board = p.match === 1 ? boardMatch1 : boardMatch2;
           const count = board.filter(c => c === p.color).length;
@@ -784,7 +784,7 @@
               <div class="w-6 h-6 rounded-full ${p.bgClass} mb-2 shadow-lg"></div>
               <h3 class="font-bold text-white text-sm mb-1">${p.nama}</h3>
               <p class="${statusColor} font-black text-sm mb-1">${statusTitle}</p>
-              <p class="text-xs text-slate-300">Lingkaran: ${count}/20 • Benar: ${p.benar}</p>
+              <p class="text-xs text-slate-300">Lingkaran: ${count}/20 • Terjawab: ${p.totalJawab}/22</p>
             </div>
           `;
           return;
@@ -814,7 +814,7 @@
                 <span class="w-4 h-4 rounded-full ${p.bgClass} shrink-0 shadow"></span>
                 <span class="text-[11px] font-bold ${p.textClass} truncate">${p.nama}</span>
               </div>
-              <span class="text-[10px] text-cyan-300 font-semibold shrink-0 bg-cyan-950/60 px-2 py-0.5 rounded-md border border-cyan-800/50">Benar: ${p.benar}</span>
+              <span class="text-[10px] text-cyan-300 font-semibold shrink-0 bg-cyan-950/60 px-2 py-0.5 rounded-md border border-cyan-800/50">Jawab: ${p.totalJawab}/22</span>
             </div>
 
             <div class="text-[11px] font-medium leading-tight whitespace-pre-line custom-scroll overflow-y-auto flex-1 min-h-0 pr-1 my-1">${formattedQ}</div>
@@ -870,7 +870,7 @@
 
       const totalMyCircles = board.filter(c => c === myColor).length;
       if (totalMyCircles >= 20) {
-        const elapsed = 600 - waktuDetik;
+        const elapsed = 360 - waktuDetik;
         if (p.match === 1 && match1Winner === null) {
           match1Winner = myColor;
           pemainAktif.filter(pl => pl.match === 1).forEach(pl => {
@@ -900,17 +900,19 @@
         playSound(200, 0.2);
       }
 
-      p.soalIndex = (p.soalIndex + 1) % p.soalDipakai.length;
+      p.soalIndex++;
+      // Jika semua soal di bank sudah habis dijawab, acak ulang kembali bank soalnya dari awal
+      if (p.soalIndex >= p.soalDipakai.length) {
+        p.soalDipakai = [...bankSoal].sort(() => Math.random() - 0.5);
+        p.soalIndex = 0;
+      }
+
       renderArena();
       renderSoal();
 
-      const m1Active = pemainAktif.some(pl => pl.match === 1);
-      const m2Active = pemainAktif.some(pl => pl.match === 2);
+      const allPlayersFinished = pemainAktif.every(pl => isPlayerMatchFinished(pl));
 
-      const m1Done = !m1Active || match1Winner !== null;
-      const m2Done = !m2Active || match2Winner !== null;
-
-      if (m1Done && m2Done) {
+      if (allPlayersFinished) {
         setTimeout(() => {
           akhiriSesi();
         }, 500);
@@ -919,7 +921,7 @@
 
     function startTimer() {
       clearInterval(timerInterval);
-      waktuDetik = 600;
+      waktuDetik = 360; // 6 Menit
       updateTimerDisplay();
 
       timerInterval = setInterval(() => {
@@ -961,7 +963,7 @@
         const jumlahLingkaran = board.filter(c => c === p.color).length;
         const isMenangMatch = (winnerColor === p.color);
 
-        let durasiDetik = p.waktuSelesai !== null ? p.waktuSelesai : (600 - waktuDetik);
+        let durasiDetik = p.waktuSelesai !== null ? p.waktuSelesai : (360 - waktuDetik);
 
         return {
           nama: p.nama,
