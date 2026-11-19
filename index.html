@@ -887,6 +887,28 @@
       }
     }
 
+    // Fungsi mengurangi 1 warna jika salah menjawab (sisakan minimal 1 titik pangkal awal)
+    function removePointFromBoard(p) {
+      const board = (p.match === 1) ? boardMatch1 : boardMatch2;
+      const myColor = p.color;
+
+      if (p.side === 'left') {
+        for (let i = 19; i >= 1; i--) {
+          if (board[i] === myColor) {
+            board[i] = null;
+            break;
+          }
+        }
+      } else {
+        for (let i = 0; i <= 18; i++) {
+          if (board[i] === myColor) {
+            board[i] = null;
+            break;
+          }
+        }
+      }
+    }
+
     function jawabSoal(playerIdx, optIdx) {
       let p = pemainAktif[playerIdx];
       if (!p || isPlayerMatchFinished(p)) return;
@@ -900,6 +922,7 @@
         applyPointToBoard(p);
       } else {
         playSound(200, 0.2);
+        removePointFromBoard(p);
       }
 
       p.soalIndex++;
